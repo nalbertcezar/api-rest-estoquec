@@ -41,5 +41,27 @@ public class Produto {
 		this.modelo = dados.modelo();
 		this.memoria = dados.memoria();
 	}
+
+	public void atualizarDados(DadosAtualizacaoProduto dados) {
+		if (dados.descricao() != null) {
+			this.descricao = dados.descricao();
+		}
+		if (dados.imei() != null) {
+			this.imei = dados.imei();
+		}
+		if (dados.valor() != null) {
+			this.valor = dados.valor();
+		}
+		if (dados.categoria() != null) {
+			this.categoria = dados.categoria();
+		}
+		if (dados.modelo() != null) {
+			this.modelo = dados.modelo();
+		}
+		if (dados.memoria() != null) {
+			this.memoria = dados.memoria();
+		}
+		
+	}
 		
 }
