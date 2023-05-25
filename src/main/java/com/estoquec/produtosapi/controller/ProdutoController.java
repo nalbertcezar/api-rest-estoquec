@@ -1,8 +1,10 @@
 package com.estoquec.produtosapi.controller;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -11,9 +13,11 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import com.estoquec.produtosapi.produto.DadosAtualizacaoProduto;
 import com.estoquec.produtosapi.produto.DadosCadastroProduto;
+import com.estoquec.produtosapi.produto.DadosDetalhamentoProduto;
 import com.estoquec.produtosapi.produto.DadosListagemProduto;
 import com.estoquec.produtosapi.produto.Produto;
 import com.estoquec.produtosapi.produto.ProdutoRepository;
@@ -30,24 +34,37 @@ public class ProdutoController {
 	
 	@PostMapping
 	@Transactional
-	public void cadastrar(@RequestBody @Valid DadosCadastroProduto dados) {
-		repository.save(new Produto(dados));
+	public ResponseEntity cadastrar(@RequestBody @Valid DadosCadastroProduto dados, UriComponentsBuilder uriBuilder) {
+		var produto = new Produto(dados);
+		repository.save(produto);
+		var uri = uriBuilder.path("/produtos/{id}").buildAndExpand(produto.getId()).toUri();
+		return ResponseEntity.created(uri).body(new DadosDetalhamentoProduto(produto));
 	}
 	
 	@GetMapping
-	public List<DadosListagemProduto> listar() {
-		return repository.findAll().stream().map(DadosListagemProduto::new).toList();
+	public ResponseEntity<Page<DadosListagemProduto>> listar(@PageableDefault(size = 10, sort = {"descricao"}) Pageable pageable) {
+		var page = repository.findAll(pageable).map(DadosListagemProduto::new);
+		return ResponseEntity.ok(page);
+	}
+	
+	@GetMapping("/{id}")
+	public ResponseEntity listarDetalhesProduto(@PathVariable Long id) {
+		var produto = repository.getReferenceById(id);
+		return ResponseEntity.ok(new DadosDetalhamentoProduto(produto));
 	}
 	
 	@PutMapping
 	@Transactional
-	public void atualizar(@RequestBody DadosAtualizacaoProduto dados) {
+	public ResponseEntity atualizar(@RequestBody DadosAtualizacaoProduto dados) {
 		var produto = repository.getReferenceById(dados.id());
 		produto.atualizarDados(dados);
+		return ResponseEntity.ok(new DadosDetalhamentoProduto(produto));
 	}
 	
 	@DeleteMapping("/{id}")
-	public void deletar(@PathVariable Long id) {
+	@Transactional
+	public ResponseEntity deletar(@PathVariable Long id) {
 		repository.deleteById(id);
+		return ResponseEntity.noContent().build();
 	}
 }
